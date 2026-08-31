@@ -1,0 +1,18 @@
+@use "./variables.scss" as *;
+
+// put your custom CSS here!
+
+// Constrain oversized Excalidraw SVG images (Quartz embeds SVGs as <object> tags)
+article object[type="image/svg+xml"] {
+  max-width: 100%;
+  width: 100%;
+  height: auto;
+  display: block;
+  aspect-ratio: auto;
+}
+
+// Ensure the paragraph wrapping the object doesn't overflow
+article p:has(> object[type="image/svg+xml"]) {
+  overflow: hidden;
+  width: 100%;
+}
