@@ -6,6 +6,8 @@ import { QuartzEmitterPlugin } from "../types"
 import spaRouterScript from "../../components/scripts/spa.inline"
 // @ts-ignore
 import popoverScript from "../../components/scripts/popover.inline"
+// @ts-ignore
+import excalidrawScript from "../../components/scripts/excalidraw.inline"
 import baseStyles from "../../styles/base.scss"
 import customStyles from "../../styles/custom.scss"
 import popoverStyle from "../../components/styles/popover.scss"
@@ -268,6 +270,9 @@ function addGlobalPageResources(ctx: BuildCtx, componentResources: ComponentReso
       document.dispatchEvent(event)
     `)
   }
+
+  // Excalidraw interactive pan-zoom & lightbox support
+  componentResources.afterDOMLoaded.push(excalidrawScript)
 }
 
 // This emitter should not update the `resources` parameter. If it does, partial

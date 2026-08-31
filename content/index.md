@@ -1,8 +1,6 @@
 ---
-title: Handbook Home
+title: Society Protocol Handbook
 ---
-
-# Society Protocol Handbook
 
 Welcome to the Society Protocol Handbook. Select a section below to view the handbook diagrams:
 

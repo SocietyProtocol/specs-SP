@@ -1,18 +1,273 @@
 @use "./variables.scss" as *;
 
-// put your custom CSS here!
+// ==========================================
+// Excalidraw SVG Styling & Responsive Layout
+// ==========================================
 
-// Constrain oversized Excalidraw SVG images (Quartz embeds SVGs as <object> tags)
-article object[type="image/svg+xml"] {
+article object[type="image/svg+xml"],
+article img[src*=".svg"],
+article img[src*="excalidraw"] {
   max-width: 100%;
   width: 100%;
   height: auto;
   display: block;
   aspect-ratio: auto;
+  border-radius: 8px;
+  background-color: var(--light);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-// Ensure the paragraph wrapping the object doesn't overflow
-article p:has(> object[type="image/svg+xml"]) {
+// Wrapper around diagram in markdown content
+.excalidraw-wrapper {
+  position: relative;
+  display: block;
   overflow: hidden;
   width: 100%;
+  margin: 1.5rem 0;
+  border-radius: 8px;
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  cursor: zoom-in;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    border-color: var(--secondary);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+
+    .excalidraw-expand-btn {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+// Hover button to explore diagram
+.excalidraw-expand-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  background: var(--light);
+  color: var(--dark);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  opacity: 0.85;
+  transform: translateY(0);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+
+  &:hover {
+    background: var(--secondary);
+    color: var(--light);
+    border-color: var(--secondary);
+    opacity: 1;
+  }
+}
+
+// ==========================================
+// Excalidraw Fullscreen Lightbox & Pan-Zoom
+// ==========================================
+
+.excalidraw-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overscroll-behavior: contain;
+  touch-action: none;
+  animation: excalidraw-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  &.closing {
+    animation: excalidraw-fade-out 0.2s ease forwards;
+  }
+}
+
+@keyframes excalidraw-fade-in {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(10px);
+  }
+}
+
+@keyframes excalidraw-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.excalidraw-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 15, 18, 0.88);
+  cursor: pointer;
+}
+
+// Toolbar controls
+.excalidraw-toolbar {
+  position: absolute;
+  top: 20px;
+  z-index: 10002;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+.excalidraw-tool-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dark);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: var(--highlight);
+    color: var(--secondary);
+  }
+
+  &.excalidraw-close-btn {
+    margin-left: 6px;
+    border-left: 1px solid var(--lightgray);
+    border-radius: 0 6px 6px 0;
+    padding-left: 8px;
+    width: 38px;
+
+    &:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+  }
+}
+
+.excalidraw-zoom-level {
+  font-size: 0.85rem;
+  font-family: var(--codeFont);
+  color: var(--darkgray);
+  padding: 0 8px;
+  user-select: none;
+}
+
+// Viewport & canvas
+.excalidraw-viewport {
+  position: relative;
+  z-index: 10000;
+  width: 96vw;
+  height: 88vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+
+  &.dragging {
+    cursor: grabbing;
+  }
+}
+
+.excalidraw-drag-capture {
+  position: absolute;
+  inset: 0;
+  z-index: 10001;
+  cursor: inherit;
+  touch-action: none;
+}
+
+.excalidraw-canvas-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
+  will-change: transform;
+  transition: transform 0.04s ease-out;
+  pointer-events: none;
+}
+
+.excalidraw-modal-img {
+  max-width: 88vw;
+  max-height: 82vh;
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.35);
+  background: var(--light);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+// Bottom hint
+.excalidraw-hint {
+  position: absolute;
+  bottom: 20px;
+  z-index: 10002;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  padding: 4px 14px;
+  border-radius: 20px;
+  pointer-events: none;
+}
+
+// ==========================================
+// Page Title & Dynamic Dark/Light Logo
+// ==========================================
+
+.page-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    font-size: 0; // Hides text so only the logo is displayed
+    line-height: 0;
+
+    &::before {
+      content: "";
+      display: inline-block;
+      width: 200px;
+      height: 36px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: left center;
+      background-image: url("/static/Horizontal%20Logo%20Black.svg");
+      flex-shrink: 0;
+    }
+  }
+}
+
+:root[saved-theme="dark"] .page-title a::before {
+  background-image: url("/static/Horizontal%20Logo%20White.png");
 }
